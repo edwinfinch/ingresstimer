@@ -55,7 +55,7 @@
     "shortName": "Ingress Timer",
     "uuid": "1b3331fb-c266-4c6d-8df6-3b4dba1fa6cb",
     "versionCode": 1,
-    "versionLabel": "1.0.2",
+    "versionLabel": "1.1.0",
     "watchapp": {
         "watchface": false
     }

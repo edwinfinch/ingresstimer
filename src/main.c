@@ -168,6 +168,30 @@ void timer_callback(int index, void *ctx){
 		first_menu_items[2].subtitle = "Running";
 	}
 }
+
+void team_callback(int index, void *ctx){
+	settings.team = !settings.team;
+	if(settings.team){
+		third_menu_items[0].subtitle = "Resistance";
+	}
+	else{
+		third_menu_items[0].subtitle = "Enlightened";
+	}
+	layer_mark_dirty(simple_menu_layer_get_layer(main_menu));
+}
+
+void theme_callback(int index, void *ctx){
+	settings.theme = !settings.theme;
+	if(settings.theme){
+		third_menu_items[1].subtitle = "Light";
+	}
+	else{
+		third_menu_items[1].subtitle = "Dark";
+	}
+	layer_mark_dirty(simple_menu_layer_get_layer(main_menu));
+	layer_set_hidden(inverter_layer_get_layer(menu_theme), settings.theme);
+	layer_set_hidden(inverter_layer_get_layer(theme), settings.theme);
+}
 	
 void window_load_main(Window *window){
 	Layer *window_layer = window_get_root_layer(window);
@@ -198,6 +222,17 @@ void window_load_main(Window *window){
 		.subtitle = "Created by Edwin Finch",
 	};
 	
+	third_menu_items[0] = (SimpleMenuItem){
+		.title = "Team",
+		.subtitle = "Resistance",
+		.callback = team_callback,
+	};
+	third_menu_items[1] = (SimpleMenuItem){
+		.title = "Theme",
+		.subtitle = "Light",
+		.callback = theme_callback,
+	};
+	
 	menu_sections[0] = (SimpleMenuSection){
 		.title = "Ingress Timers",
 		.num_items = NUM_FIRST_MENU_ITEMS,
@@ -208,9 +243,30 @@ void window_load_main(Window *window){
 		.num_items = NUM_SECOND_MENU_ITEMS,
 		.items = second_menu_items,
 	};
+	menu_sections[2] = (SimpleMenuSection){
+		.title = "Settings",
+		.num_items = NUM_THIRD_MENU_ITEMS,
+		.items = third_menu_items,
+	};
+	
+	if(settings.team){
+		third_menu_items[0].subtitle = "Resistance";
+	}
+	else{
+		third_menu_items[0].subtitle = "Enlightened";
+	}
+	if(settings.theme){
+		third_menu_items[1].subtitle = "Light";
+	}
+	else{
+		third_menu_items[1].subtitle = "Dark";
+	}
 	
 	main_menu = simple_menu_layer_create(bounds, main_window, menu_sections, NUM_MENU_SECTIONS, NULL);
+	menu_theme = inverter_layer_create(GRect(0, 0, 144, 168));
 	layer_add_child(window_layer, simple_menu_layer_get_layer(main_menu));
+	layer_add_child(window_layer, inverter_layer_get_layer(menu_theme));
+	layer_set_hidden(inverter_layer_get_layer(menu_theme), settings.theme);
 }
 
 void up(ClickRecognizerRef recognizer, void *context){
@@ -274,11 +330,18 @@ void window_load_timer(Window *window){
 	theme = inverter_layer_create(GRect(0, 0, 144, 168));
 	ab = action_bar_layer_create();
 	
+	if(settings.team){
+		bitmap_layer_set_bitmap(team_layer, resistance);
+	}
+	else{
+		bitmap_layer_set_bitmap(team_layer, enlightened);
+	}
+	
 	layer_add_child(window_layer, text_layer_get_layer(minute_5_t));
 	layer_add_child(window_layer, text_layer_get_layer(minute_21_t));
 	layer_add_child(window_layer, text_layer_get_layer(hour_4_t));
-	layer_add_child(window_layer, bitmap_layer_get_layer(res_layer));
-	layer_add_child(window_layer, bitmap_layer_get_layer(enl_layer));
+	layer_add_child(window_layer, bitmap_layer_get_layer(team_layer));
+	layer_set_hidden(inverter_layer_get_layer(theme), settings.theme);
 	action_bar_layer_add_to_window(ab, window);
 	layer_add_child(window_layer, inverter_layer_get_layer(theme));
 	action_bar_layer_set_click_config_provider(ab, click_config_prov);
@@ -330,9 +393,20 @@ void window_load_timer(Window *window){
 		start = GRect(-144, 80, 144, 168);
 		finish = GRect(0, 80, 144, 168);
 		animate_layer(text_layer_get_layer(hour_4_t), &start, &finish, 10);
-		layer_set_hidden(bitmap_layer_get_layer(enl_layer), true);
-		layer_set_hidden(bitmap_layer_get_layer(res_layer), true);
+		layer_set_hidden(bitmap_layer_get_layer(team_layer), true);
 	}
+	if(timerFired != 3){
+		layer_set_hidden(bitmap_layer_get_layer(team_layer), false);
+		GRect start = GRect(0, 90, 144, 168);
+		GRect finish = GRect(0, 30, 144, 168);
+		animate_layer(bitmap_layer_get_layer(team_layer), &start, &finish, 10);
+	}
+	struct tm *t;
+  	time_t temp;        
+  	temp = time(NULL);        
+  	t = localtime(&temp);
+	
+	tick_handler(t, SECOND_UNIT);
 }
 
 void window_unload_timer(Window *window){
@@ -357,6 +431,9 @@ void init(void){
 		.unload = window_unload_timer,
 	});
 	
+	value = persist_read_data(SETTINGS_KEY, &settings, sizeof(settings));
+	APP_LOG(APP_LOG_LEVEL_INFO, "%d bytes read from storage", value);
+	
 	play = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PLAY);
 	pause = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PAUSE);
 	restart = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_RESTART);
@@ -365,10 +442,7 @@ void init(void){
 	resistance = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_RESISTANCE);
 	enlightened = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ENLIGHTENED);
 	
-	res_layer = bitmap_layer_create(GRect(-25, 30, 144, 168));
-	enl_layer = bitmap_layer_create(GRect(25, 30, 144, 168));
-	bitmap_layer_set_bitmap(res_layer, resistance);
-	bitmap_layer_set_bitmap(enl_layer, enlightened);
+	team_layer = bitmap_layer_create(GRect(0, 30, 144, 168));
 	
 	tick_timer_service_subscribe(SECOND_UNIT, &tick_handler);
 	window_stack_push(main_window, true);
@@ -385,6 +459,8 @@ void deinit(void){
 	gbitmap_destroy(restart);
 	fonts_unload_custom_font(coda);
 	fonts_unload_custom_font(coda_small);
+	value = persist_write_data(SETTINGS_KEY, &settings, sizeof(settings));
+	APP_LOG(APP_LOG_LEVEL_INFO, "%d bytes written to storage", value);
 }
 
 int main(){
