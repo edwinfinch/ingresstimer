@@ -5,8 +5,15 @@
     ],
     "companyName": "Edwin Finch",
     "longName": "Ingress Timer",
+    "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/ingress-icon.png",
+                "menuIcon": true,
+                "name": "MENU_ICON",
+                "type": "png"
+            },
             {
                 "file": "images/VQ896XG.png",
                 "name": "IMAGE_ENLIGHTENED",
@@ -30,12 +37,6 @@
                 "type": "font"
             },
             {
-                "file": "images/ingress-icon.png",
-                "menuIcon": true,
-                "name": "MENU_ICON",
-                "type": "png"
-            },
-            {
                 "file": "images/restart.png",
                 "name": "IMAGE_RESTART",
                 "type": "png"
@@ -55,7 +56,7 @@
     "shortName": "Ingress Timer",
     "uuid": "1b3331fb-c266-4c6d-8df6-3b4dba1fa6cb",
     "versionCode": 1,
-    "versionLabel": "1.1.0",
+    "versionLabel": "1.1",
     "watchapp": {
         "watchface": false
     }
